@@ -1,0 +1,118 @@
+Exp. No: 1 - Study of Operating System Environment (Linux/Windows commands)
+========================================
+
+COMMANDS (LINUX)
+----------------------------------------
+# Ex.No:1  Linux commands (type these in the terminal, one by one)
+
+# Step 3: system information
+uname -a
+whoami
+pwd
+date
+
+# Step 4: directory structure
+mkdir oslab
+ls -l
+
+# Step 5: file operations
+echo "Hello OS Lab" > oslab/file.txt
+cat oslab/file.txt
+cp oslab/file.txt oslab/copy.txt
+wc -l oslab/file.txt
+
+# Step 6: permissions
+chmod 600 oslab/file.txt
+ls -l oslab
+
+# Step 7: disk and memory
+df -h
+free -h
+
+# Step 8: process monitoring
+ps -ef
+top            # press q to quit
+
+# Step 9: remove file
+rm oslab/file.txt oslab/copy.txt
+ls -l oslab
+
+COMMANDS (WINDOWS)
+----------------------------------------
+# Ex.No:1  Windows commands (type these in Command Prompt, one by one)
+
+dir
+md oslab
+echo Hello OS Lab > oslab\file.txt
+type oslab\file.txt
+copy oslab\file.txt oslab\copy.txt
+attrib +r oslab\file.txt
+attrib oslab\file.txt
+tasklist
+attrib -r oslab\file.txt
+del oslab\file.txt oslab\copy.txt
+dir oslab
+
+OUTPUT (LINUX)
+----------------------------------------
+$ uname -a
+Linux vm 6.18.44-fc-v180 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux
+$ whoami
+root
+$ pwd
+/tmp/w1
+$ date
+Wed Oct 28 01:16:51 UTC 2026
+$ mkdir oslab
+$ ls -l
+total 4
+drwxr-xr-x 2 root root 4096 Oct 28 01:16 oslab
+$ echo "Hello OS Lab" > oslab/file.txt
+$ cat oslab/file.txt
+Hello OS Lab
+$ cp oslab/file.txt oslab/copy.txt
+$ wc -l oslab/file.txt
+1 oslab/file.txt
+$ chmod 600 oslab/file.txt
+$ ls -l oslab
+total 8
+-rw-r--r-- 1 root root 13 Oct 28 01:16 copy.txt
+-rw------- 1 root root 13 Oct 28 01:16 file.txt
+$ df -h
+Filesystem                                                                         Size  Used Avail Use% Mounted on
+tmpfs                                                                              4.0G  308K  4.0G   1% /dev/shm
+/dev/vda                                                                           252G  8.6G   10G  47% /
+model_tools_unavailable                                                            4.0K     0  4.0K   0% /mnt/sandboxing/model_tools_env/v1/python
+tmpfs                                                                              2.0G     0  2.0G   0% /sys/fs/cgroup
+tmpfs                                                                              1.0M     0  1.0M   0% /run/sandbox-telemetry
+rclone-filestore:claude_chat_01SCuKLtBrnqzCwakmGfsRDZ:/mnt/user-data/tool_results  1.0P     0  1.0P   0% /mnt/user-data/tool_results
+rclone-filestore:claude_chat_01SCuKLtBrnqzCwakmGfsRDZ:/mnt/user-data/outputs       1.0P     0  1.0P   0% /mnt/user-data/outputs
+rclone-filestore:claude_chat_01SCuKLtBrnqzCwakmGfsRDZ:/mnt/user-data/uploads       1.0P     0  1.0P   0% /mnt/user-data/uploads
+rclone-filestore:claude_chat_01SCuKLtBrnqzCwakmGfsRDZ:/mnt/transcripts             1.0P     0  1.0P   0% /mnt/transcripts
+$ free -h
+               total        used        free      shared  buff/cache   available
+Mem:           3.9Gi       196Mi       3.8Gi        15Mi        66Mi       3.7Gi
+Swap:             0B          0B          0B
+$ ps -ef | head -6
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  1 01:15 ?        00:00:00 /process_api --firecracker-init --addr 0.0.0.0:2024 --max-ws-buffer-size 32768 --block-local-connections --control-vsock-port 5001 --listen-vsock-port 2024 --log-vsock-port 5002
+root         2     0  0 01:15 ?        00:00:00 [kthreadd]
+root         3     2  0 01:15 ?        00:00:00 [pool_workqueue_release]
+root         4     2  0 01:15 ?        00:00:00 [kworker/R-rcu_gp]
+root         5     2  0 01:15 ?        00:00:00 [kworker/R-sync_wq]
+$ top -b -n 1 | head -12
+top - 01:16:52 up 1 min,  0 user,  load average: 0.16, 0.07, 0.02
+Tasks:  54 total,   1 running,  53 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+MiB Mem :   3995.8 total,   3882.8 free,    198.8 used,     67.3 buff/cache     
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.   3797.0 avail Mem 
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+    1 root      20   0   19540   6220   5812 S   0.0   0.2   0:00.88 process_a+
+    2 root      20   0       0      0      0 S   0.0   0.0   0:00.01 kthreadd
+    3 root      20   0       0      0      0 S   0.0   0.0   0:00.00 pool_work+
+    4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/R+
+    5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/R+
+$ rm oslab/file.txt oslab/copy.txt
+$ ls -l oslab
+total 0

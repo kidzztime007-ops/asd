@@ -1,0 +1,208 @@
+Exp. No: 8 - Page Replacement: FIFO, LRU, Optimal
+========================================
+
+PROGRAM (Ex8_Page_Replacement.c)
+----------------------------------------
+/* Ex.No:8 Page Replacement: FIFO, LRU, Optimal */
+#include <stdio.h>
+
+int n, f, ref[50];
+
+void printFrames(int fr[], int hit, int page) {
+    printf("%d\t", page);
+    for (int i = 0; i < f; i++) {
+        if (fr[i] == -1) printf("- ");
+        else printf("%d ", fr[i]);
+    }
+    printf("\t%s\n", hit ? "Hit" : "Page Fault");
+}
+
+void result(const char *name, int faults) {
+    printf("\n%s: Page faults = %d, Hits = %d, Hit ratio = %.2f\n",
+           name, faults, n - faults, (float)(n - faults) / n);
+}
+
+int search(int fr[], int page) {
+    for (int i = 0; i < f; i++) if (fr[i] == page) return i;
+    return -1;
+}
+
+void fifo() {
+    int fr[10], ptr = 0, faults = 0;
+    for (int i = 0; i < f; i++) fr[i] = -1;
+    printf("\nFIFO\nPage\tFrames\t\tStatus\n");
+    for (int i = 0; i < n; i++) {
+        int hit = (search(fr, ref[i]) != -1);
+        if (!hit) { fr[ptr] = ref[i]; ptr = (ptr + 1) % f; faults++; }
+        printFrames(fr, hit, ref[i]);
+    }
+    result("FIFO", faults);
+}
+
+void lru() {
+    int fr[10], last[10], faults = 0;
+    for (int i = 0; i < f; i++) { fr[i] = -1; last[i] = -1; }
+    printf("\nLRU\nPage\tFrames\t\tStatus\n");
+    for (int i = 0; i < n; i++) {
+        int pos = search(fr, ref[i]);
+        int hit = (pos != -1);
+        if (hit) last[pos] = i;
+        else {
+            int v = 0;                       /* empty frame or least recently used */
+            for (int j = 0; j < f; j++) {
+                if (fr[j] == -1) { v = j; break; }
+                if (last[j] < last[v]) v = j;
+            }
+            fr[v] = ref[i]; last[v] = i; faults++;
+        }
+        printFrames(fr, hit, ref[i]);
+    }
+    result("LRU", faults);
+}
+
+void optimal() {
+    int fr[10], faults = 0;
+    for (int i = 0; i < f; i++) fr[i] = -1;
+    printf("\nOPTIMAL\nPage\tFrames\t\tStatus\n");
+    for (int i = 0; i < n; i++) {
+        int hit = (search(fr, ref[i]) != -1);
+        if (!hit) {
+            int v = -1, farthest = -1;
+            for (int j = 0; j < f; j++) {
+                if (fr[j] == -1) { v = j; break; }
+                int next = n;                /* n means never used again */
+                for (int k = i + 1; k < n; k++)
+                    if (ref[k] == fr[j]) { next = k; break; }
+                if (next > farthest) { farthest = next; v = j; }
+            }
+            fr[v] = ref[i]; faults++;
+        }
+        printFrames(fr, hit, ref[i]);
+    }
+    result("OPTIMAL", faults);
+}
+
+int main() {
+    int ch;
+    printf("Enter length of reference string: ");
+    scanf("%d", &n);
+    printf("Enter reference string: ");
+    for (int i = 0; i < n; i++) scanf("%d", &ref[i]);
+    printf("Enter number of frames: ");
+    scanf("%d", &f);
+    do {
+        printf("\n1.FIFO  2.LRU  3.Optimal  4.Exit\nChoice: ");
+        scanf("%d", &ch);
+        switch (ch) {
+            case 1: fifo(); break;
+            case 2: lru(); break;
+            case 3: optimal(); break;
+            case 4: break;
+            default: printf("Invalid choice\n");
+        }
+    } while (ch != 4);
+    return 0;
+}
+
+SAMPLE INPUT
+----------------------------------------
+20
+7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1
+3
+1
+2
+3
+4
+
+SAMPLE OUTPUT
+----------------------------------------
+Enter length of reference string: 20
+Enter reference string: 7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1
+Enter number of frames: 3
+
+1.FIFO  2.LRU  3.Optimal  4.Exit
+Choice: 1
+
+FIFO
+Page	Frames		Status
+7	7 - - 	Page Fault
+0	7 0 - 	Page Fault
+1	7 0 1 	Page Fault
+2	2 0 1 	Page Fault
+0	2 0 1 	Hit
+3	2 3 1 	Page Fault
+0	2 3 0 	Page Fault
+4	4 3 0 	Page Fault
+2	4 2 0 	Page Fault
+3	4 2 3 	Page Fault
+0	0 2 3 	Page Fault
+3	0 2 3 	Hit
+2	0 2 3 	Hit
+1	0 1 3 	Page Fault
+2	0 1 2 	Page Fault
+0	0 1 2 	Hit
+1	0 1 2 	Hit
+7	7 1 2 	Page Fault
+0	7 0 2 	Page Fault
+1	7 0 1 	Page Fault
+
+FIFO: Page faults = 15, Hits = 5, Hit ratio = 0.25
+
+1.FIFO  2.LRU  3.Optimal  4.Exit
+Choice: 2
+
+LRU
+Page	Frames		Status
+7	7 - - 	Page Fault
+0	7 0 - 	Page Fault
+1	7 0 1 	Page Fault
+2	2 0 1 	Page Fault
+0	2 0 1 	Hit
+3	2 0 3 	Page Fault
+0	2 0 3 	Hit
+4	4 0 3 	Page Fault
+2	4 0 2 	Page Fault
+3	4 3 2 	Page Fault
+0	0 3 2 	Page Fault
+3	0 3 2 	Hit
+2	0 3 2 	Hit
+1	1 3 2 	Page Fault
+2	1 3 2 	Hit
+0	1 0 2 	Page Fault
+1	1 0 2 	Hit
+7	1 0 7 	Page Fault
+0	1 0 7 	Hit
+1	1 0 7 	Hit
+
+LRU: Page faults = 12, Hits = 8, Hit ratio = 0.40
+
+1.FIFO  2.LRU  3.Optimal  4.Exit
+Choice: 3
+
+OPTIMAL
+Page	Frames		Status
+7	7 - - 	Page Fault
+0	7 0 - 	Page Fault
+1	7 0 1 	Page Fault
+2	2 0 1 	Page Fault
+0	2 0 1 	Hit
+3	2 0 3 	Page Fault
+0	2 0 3 	Hit
+4	2 4 3 	Page Fault
+2	2 4 3 	Hit
+3	2 4 3 	Hit
+0	2 0 3 	Page Fault
+3	2 0 3 	Hit
+2	2 0 3 	Hit
+1	2 0 1 	Page Fault
+2	2 0 1 	Hit
+0	2 0 1 	Hit
+1	2 0 1 	Hit
+7	7 0 1 	Page Fault
+0	7 0 1 	Hit
+1	7 0 1 	Hit
+
+OPTIMAL: Page faults = 9, Hits = 11, Hit ratio = 0.55
+
+1.FIFO  2.LRU  3.Optimal  4.Exit
+Choice: 4

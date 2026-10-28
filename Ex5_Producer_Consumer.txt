@@ -1,0 +1,91 @@
+Exp. No: 5 - Process Synchronization: Producer-Consumer using Mutex and Semaphores
+========================================
+
+PROGRAM (Ex5_Producer_Consumer.c)
+----------------------------------------
+/* Ex.No:5 Producer-Consumer problem using threads, mutex and semaphores
+   Compile: gcc Ex5_Producer_Consumer.c -o ex5 -lpthread */
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#define BUFSIZE 5
+#define ITEMS   10
+
+int buffer[BUFSIZE];
+int in = 0, out = 0;
+sem_t empty, full;
+pthread_mutex_t mutex;
+
+void *producer(void *arg) {
+    for (int i = 1; i <= ITEMS; i++) {
+        sem_wait(&empty);                    /* wait for free slot */
+        pthread_mutex_lock(&mutex);
+        buffer[in] = i;
+        printf("Produced item %d at position %d\n", i, in);
+        in = (in + 1) % BUFSIZE;
+        pthread_mutex_unlock(&mutex);
+        sem_post(&full);
+        sleep(1);
+    }
+    return NULL;
+}
+
+void *consumer(void *arg) {
+    for (int i = 1; i <= ITEMS; i++) {
+        sem_wait(&full);                     /* wait for filled slot */
+        pthread_mutex_lock(&mutex);
+        int item = buffer[out];
+        printf("\t\tConsumed item %d from position %d\n", item, out);
+        out = (out + 1) % BUFSIZE;
+        pthread_mutex_unlock(&mutex);
+        sem_post(&empty);
+        sleep(2);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t prod, cons;
+    sem_init(&empty, 0, BUFSIZE);
+    sem_init(&full, 0, 0);
+    pthread_mutex_init(&mutex, NULL);
+
+    pthread_create(&prod, NULL, producer, NULL);
+    pthread_create(&cons, NULL, consumer, NULL);
+    pthread_join(prod, NULL);
+    pthread_join(cons, NULL);
+
+    pthread_mutex_destroy(&mutex);
+    sem_destroy(&empty);
+    sem_destroy(&full);
+    return 0;
+}
+
+SAMPLE INPUT
+----------------------------------------
+(no input needed)
+
+SAMPLE OUTPUT
+----------------------------------------
+Produced item 1 at position 0
+		Consumed item 1 from position 0
+Produced item 2 at position 1
+		Consumed item 2 from position 1
+Produced item 3 at position 2
+Produced item 4 at position 3
+		Consumed item 3 from position 2
+Produced item 5 at position 4
+Produced item 6 at position 0
+		Consumed item 4 from position 3
+Produced item 7 at position 1
+Produced item 8 at position 2
+		Consumed item 5 from position 4
+Produced item 9 at position 3
+Produced item 10 at position 4
+		Consumed item 6 from position 0
+		Consumed item 7 from position 1
+		Consumed item 8 from position 2
+		Consumed item 9 from position 3
+		Consumed item 10 from position 4

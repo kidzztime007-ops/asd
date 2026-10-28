@@ -1,0 +1,184 @@
+Exp. No: 2 - CPU Scheduling Algorithms: FCFS, SJF, Priority, Round Robin
+========================================
+
+PROGRAM (Ex2_CPU_Scheduling.c)
+----------------------------------------
+/* Ex.No:2 CPU Scheduling: FCFS, SJF (non-preemptive), Priority, Round Robin */
+#include <stdio.h>
+
+typedef struct { int pid, at, bt, pr, rem, ct, tat, wt, done; } Process;
+Process p[20];
+int n;
+
+void reset() {
+    for (int i = 0; i < n; i++) { p[i].rem = p[i].bt; p[i].done = 0; }
+}
+
+void display(const char *name) {
+    float tw = 0, tt = 0;
+    printf("\n--- %s ---\n", name);
+    printf("PID\tAT\tBT\tPR\tCT\tTAT\tWT\n");
+    for (int i = 0; i < n; i++) {
+        p[i].tat = p[i].ct - p[i].at;      /* Turnaround = Completion - Arrival */
+        p[i].wt  = p[i].tat - p[i].bt;     /* Waiting = Turnaround - Burst */
+        tw += p[i].wt; tt += p[i].tat;
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\t%d\n", p[i].pid, p[i].at, p[i].bt,
+               p[i].pr, p[i].ct, p[i].tat, p[i].wt);
+    }
+    printf("Average Waiting Time    = %.2f\n", tw / n);
+    printf("Average Turnaround Time = %.2f\n", tt / n);
+}
+
+/* mode 0 = FCFS, 1 = SJF, 2 = Priority (all non-preemptive) */
+void nonPreemptive(int mode, const char *name) {
+    int time = 0, count = 0;
+    reset();
+    while (count < n) {
+        int sel = -1, best = 0;
+        for (int i = 0; i < n; i++) {
+            if (!p[i].done && p[i].at <= time) {
+                int key = (mode == 0) ? p[i].at : (mode == 1) ? p[i].bt : p[i].pr;
+                if (sel == -1 || key < best) { sel = i; best = key; }
+            }
+        }
+        if (sel == -1) {                       /* CPU idle: jump to next arrival */
+            int next = -1;
+            for (int i = 0; i < n; i++)
+                if (!p[i].done && (next == -1 || p[i].at < next)) next = p[i].at;
+            time = next;
+            continue;
+        }
+        time += p[sel].bt;
+        p[sel].ct = time;
+        p[sel].done = 1;
+        count++;
+    }
+    display(name);
+}
+
+void roundRobin() {
+    int tq, time = 0, count = 0, front = 0, rear = 0;
+    int queue[1000], admitted[20] = {0};
+    printf("Enter time quantum: ");
+    scanf("%d", &tq);
+    reset();
+
+    time = p[0].at;
+    for (int i = 0; i < n; i++) if (p[i].at < time) time = p[i].at;
+
+    while (count < n) {
+        for (int i = 0; i < n; i++)            /* admit newly arrived processes */
+            if (!admitted[i] && p[i].at <= time) { queue[rear++] = i; admitted[i] = 1; }
+        if (front == rear) {                   /* queue empty: advance time */
+            time++;
+            continue;
+        }
+        int i = queue[front++];
+        int run = (p[i].rem < tq) ? p[i].rem : tq;
+        time += run;
+        p[i].rem -= run;
+        for (int j = 0; j < n; j++)            /* admit processes arrived meanwhile */
+            if (!admitted[j] && p[j].at <= time) { queue[rear++] = j; admitted[j] = 1; }
+        if (p[i].rem > 0) queue[rear++] = i;
+        else { p[i].ct = time; p[i].done = 1; count++; }
+    }
+    display("Round Robin");
+}
+
+int main() {
+    int ch;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("P%d - Arrival time, Burst time, Priority: ", i + 1);
+        scanf("%d %d %d", &p[i].at, &p[i].bt, &p[i].pr);
+    }
+    do {
+        printf("\n1.FCFS  2.SJF  3.Priority  4.Round Robin  5.Exit\nChoice: ");
+        scanf("%d", &ch);
+        switch (ch) {
+            case 1: nonPreemptive(0, "FCFS"); break;
+            case 2: nonPreemptive(1, "SJF (Non-Preemptive)"); break;
+            case 3: nonPreemptive(2, "Priority (Non-Preemptive)"); break;
+            case 4: roundRobin(); break;
+            case 5: break;
+            default: printf("Invalid choice\n");
+        }
+    } while (ch != 5);
+    return 0;
+}
+
+SAMPLE INPUT
+----------------------------------------
+4
+0 5 2
+1 3 1
+2 8 4
+3 6 3
+1
+2
+3
+4
+2
+5
+
+SAMPLE OUTPUT
+----------------------------------------
+Enter number of processes: 4
+P1 - Arrival time, Burst time, Priority: 0 5 2
+P2 - Arrival time, Burst time, Priority: 1 3 1
+P3 - Arrival time, Burst time, Priority: 2 8 4
+P4 - Arrival time, Burst time, Priority: 3 6 3
+
+1.FCFS  2.SJF  3.Priority  4.Round Robin  5.Exit
+Choice: 1
+
+--- FCFS ---
+PID	AT	BT	PR	CT	TAT	WT
+P1	0	5	2	5	5	0
+P2	1	3	1	8	7	4
+P3	2	8	4	16	14	6
+P4	3	6	3	22	19	13
+Average Waiting Time    = 5.75
+Average Turnaround Time = 11.25
+
+1.FCFS  2.SJF  3.Priority  4.Round Robin  5.Exit
+Choice: 2
+
+--- SJF (Non-Preemptive) ---
+PID	AT	BT	PR	CT	TAT	WT
+P1	0	5	2	5	5	0
+P2	1	3	1	8	7	4
+P3	2	8	4	22	20	12
+P4	3	6	3	14	11	5
+Average Waiting Time    = 5.25
+Average Turnaround Time = 10.75
+
+1.FCFS  2.SJF  3.Priority  4.Round Robin  5.Exit
+Choice: 3
+
+--- Priority (Non-Preemptive) ---
+PID	AT	BT	PR	CT	TAT	WT
+P1	0	5	2	5	5	0
+P2	1	3	1	8	7	4
+P3	2	8	4	22	20	12
+P4	3	6	3	14	11	5
+Average Waiting Time    = 5.25
+Average Turnaround Time = 10.75
+
+1.FCFS  2.SJF  3.Priority  4.Round Robin  5.Exit
+Choice: 4
+Enter time quantum: 2
+
+--- Round Robin ---
+PID	AT	BT	PR	CT	TAT	WT
+P1	0	5	2	14	14	9
+P2	1	3	1	11	10	7
+P3	2	8	4	22	20	12
+P4	3	6	3	20	17	11
+Average Waiting Time    = 9.75
+Average Turnaround Time = 15.25
+
+1.FCFS  2.SJF  3.Priority  4.Round Robin  5.Exit
+Choice: 5

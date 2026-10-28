@@ -1,0 +1,147 @@
+Exp. No: 9 - File Management using system calls
+========================================
+
+PROGRAM (Ex9_File_Management.c)
+----------------------------------------
+/* Ex.No:9 File Management using system calls: open, write, read, stat, chmod, unlink */
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
+char name[100];
+
+void create() {
+    printf("Enter file name: ");
+    scanf("%s", name);
+    int fd = open(name, O_CREAT | O_EXCL | O_WRONLY, 0644);
+    if (fd < 0) { perror("create"); return; }
+    printf("File created (descriptor = %d)\n", fd);
+    close(fd);
+}
+
+void writeFile() {
+    char text[200];
+    int fd = open(name, O_WRONLY | O_APPEND);
+    if (fd < 0) { perror("open"); return; }
+    printf("Enter text: ");
+    scanf(" %[^\n]", text);
+    int b = write(fd, text, strlen(text));
+    printf("Bytes written = %d\n", b);
+    close(fd);
+}
+
+void readFile() {
+    char buf[100];
+    int r, fd = open(name, O_RDONLY);
+    if (fd < 0) { perror("open"); return; }
+    printf("File contents:\n");
+    while ((r = read(fd, buf, sizeof(buf))) > 0)   /* until read() returns 0 */
+        write(1, buf, r);
+    printf("\n");
+    close(fd);
+}
+
+void attributes() {
+    struct stat st;
+    if (stat(name, &st) < 0) { perror("stat"); return; }
+    printf("Size        : %ld bytes\n", (long)st.st_size);
+    printf("Inode number: %ld\n", (long)st.st_ino);
+    printf("Permission  : %o  ", st.st_mode & 0777);
+    printf("%c%c%c%c%c%c%c%c%c\n",
+        (st.st_mode & S_IRUSR) ? 'r' : '-', (st.st_mode & S_IWUSR) ? 'w' : '-',
+        (st.st_mode & S_IXUSR) ? 'x' : '-', (st.st_mode & S_IRGRP) ? 'r' : '-',
+        (st.st_mode & S_IWGRP) ? 'w' : '-', (st.st_mode & S_IXGRP) ? 'x' : '-',
+        (st.st_mode & S_IROTH) ? 'r' : '-', (st.st_mode & S_IWOTH) ? 'w' : '-',
+        (st.st_mode & S_IXOTH) ? 'x' : '-');
+}
+
+void permission() {
+    unsigned int mode;
+    printf("Enter new permission (octal, e.g. 600): ");
+    scanf("%o", &mode);
+    if (chmod(name, mode) < 0) { perror("chmod"); return; }
+    printf("Permission changed. New attributes:\n");
+    attributes();
+}
+
+void delete() {
+    if (unlink(name) < 0) { perror("unlink"); return; }
+    printf("File deleted\n");
+    printf("Trying to display attributes again:\n");
+    attributes();                            /* fails, confirming deletion */
+}
+
+int main() {
+    int ch;
+    do {
+        printf("\n1.Create 2.Write 3.Read 4.Attributes 5.Permission 6.Delete 7.Exit\nChoice: ");
+        scanf("%d", &ch);
+        switch (ch) {
+            case 1: create(); break;
+            case 2: writeFile(); break;
+            case 3: readFile(); break;
+            case 4: attributes(); break;
+            case 5: permission(); break;
+            case 6: delete(); break;
+            case 7: break;
+            default: printf("Invalid choice\n");
+        }
+    } while (ch != 7);
+    return 0;
+}
+
+SAMPLE INPUT
+----------------------------------------
+1
+test.txt
+2
+Hello Operating System Lab
+3
+4
+5
+600
+6
+7
+
+SAMPLE OUTPUT
+----------------------------------------
+
+1.Create 2.Write 3.Read 4.Attributes 5.Permission 6.Delete 7.Exit
+Choice: 1
+Enter file name: test.txt
+File created (descriptor = 3)
+
+1.Create 2.Write 3.Read 4.Attributes 5.Permission 6.Delete 7.Exit
+Choice: 2
+Enter text: Hello Operating System Lab
+Bytes written = 26
+
+1.Create 2.Write 3.Read 4.Attributes 5.Permission 6.Delete 7.Exit
+Choice: 3
+File contents:
+Hello Operating System Lab
+
+1.Create 2.Write 3.Read 4.Attributes 5.Permission 6.Delete 7.Exit
+Choice: 4
+Size        : 26 bytes
+Inode number: 2801684
+Permission  : 644  rw-r--r--
+
+1.Create 2.Write 3.Read 4.Attributes 5.Permission 6.Delete 7.Exit
+Choice: 5
+Enter new permission (octal, e.g. 600): 600
+Permission changed. New attributes:
+Size        : 26 bytes
+Inode number: 2801684
+Permission  : 600  rw-------
+
+1.Create 2.Write 3.Read 4.Attributes 5.Permission 6.Delete 7.Exit
+Choice: 6
+File deleted
+Trying to display attributes again:
+stat: No such file or directory
+
+1.Create 2.Write 3.Read 4.Attributes 5.Permission 6.Delete 7.Exit
+Choice: 7

@@ -1,0 +1,120 @@
+Exp. No: 4 - Inter-Process Communication: Pipe, Shared Memory, Message Queue
+========================================
+
+PROGRAM (Ex4_IPC.c)
+----------------------------------------
+/* Ex.No:4 Inter-Process Communication: Pipe, Shared Memory, Message Queue */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/msg.h>
+
+#define SIZE 100
+
+struct msgbuf { long type; char text[SIZE]; };
+
+void usePipe() {
+    int fd[2];
+    char msg[] = "Hello from child using PIPE";
+    char buf[SIZE];
+    pipe(fd);
+    if (fork() == 0) {                       /* child: writer */
+        close(fd[0]);
+        write(fd[1], msg, strlen(msg) + 1);
+        close(fd[1]);
+        exit(0);
+    }
+    close(fd[1]);                            /* parent: reader */
+    read(fd[0], buf, SIZE);
+    close(fd[0]);
+    wait(NULL);
+    printf("Sent    : %s\nReceived: %s\n", msg, buf);
+    printf(strcmp(msg, buf) == 0 ? "Data is identical\n" : "Data differs\n");
+}
+
+void useSharedMemory() {
+    char msg[] = "Hello from child using SHARED MEMORY";
+    int id = shmget(1234, SIZE, IPC_CREAT | 0666);
+    if (id < 0) { perror("shmget"); return; }
+    if (fork() == 0) {                       /* child: writer */
+        char *p = (char *)shmat(id, NULL, 0);
+        strcpy(p, msg);
+        shmdt(p);
+        exit(0);
+    }
+    wait(NULL);                              /* parent: reader */
+    char *p = (char *)shmat(id, NULL, 0);
+    printf("Sent    : %s\nReceived: %s\n", msg, p);
+    printf(strcmp(msg, p) == 0 ? "Data is identical\n" : "Data differs\n");
+    shmdt(p);
+    shmctl(id, IPC_RMID, NULL);              /* remove segment */
+}
+
+void useMessageQueue() {
+    char msg[] = "Hello from child using MESSAGE QUEUE";
+    struct msgbuf m;
+    int id = msgget(5678, IPC_CREAT | 0666);
+    if (id < 0) { perror("msgget"); return; }
+    if (fork() == 0) {                       /* child: sender */
+        m.type = 1;
+        strcpy(m.text, msg);
+        msgsnd(id, &m, strlen(msg) + 1, 0);
+        exit(0);
+    }
+    wait(NULL);                              /* parent: receiver */
+    msgrcv(id, &m, SIZE, 1, 0);
+    printf("Sent    : %s\nReceived: %s\n", msg, m.text);
+    printf(strcmp(msg, m.text) == 0 ? "Data is identical\n" : "Data differs\n");
+    msgctl(id, IPC_RMID, NULL);              /* remove queue */
+}
+
+int main() {
+    int ch;
+    do {
+        printf("\n1.Pipe  2.Shared Memory  3.Message Queue  4.Exit\nChoice: ");
+        scanf("%d", &ch);
+        switch (ch) {
+            case 1: usePipe(); break;
+            case 2: useSharedMemory(); break;
+            case 3: useMessageQueue(); break;
+            case 4: break;
+            default: printf("Invalid choice\n");
+        }
+    } while (ch != 4);
+    return 0;
+}
+
+SAMPLE INPUT
+----------------------------------------
+1
+2
+3
+4
+
+SAMPLE OUTPUT
+----------------------------------------
+
+1.Pipe  2.Shared Memory  3.Message Queue  4.Exit
+Choice: 1
+Sent    : Hello from child using PIPE
+Received: Hello from child using PIPE
+Data is identical
+
+1.Pipe  2.Shared Memory  3.Message Queue  4.Exit
+Choice: 2
+Sent    : Hello from child using SHARED MEMORY
+Received: Hello from child using SHARED MEMORY
+Data is identical
+
+1.Pipe  2.Shared Memory  3.Message Queue  4.Exit
+Choice: 3
+Sent    : Hello from child using MESSAGE QUEUE
+Received: Hello from child using MESSAGE QUEUE
+Data is identical
+
+1.Pipe  2.Shared Memory  3.Message Queue  4.Exit
+Choice: 4

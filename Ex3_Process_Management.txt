@@ -1,0 +1,73 @@
+Exp. No: 3 - Process Management: fork, exec, wait, exit
+========================================
+
+PROGRAM (Ex3_Process_Management.c)
+----------------------------------------
+/* Ex.No:3 Process Management: fork(), exec(), wait(), exit() */
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main() {
+    pid_t pid1, pid2;
+    int status;
+
+    setbuf(stdout, NULL);                          /* unbuffered output */
+    printf("Parent process PID = %d\n", getpid());
+
+    pid1 = fork();                                 /* first child */
+    if (pid1 < 0) { perror("fork"); exit(1); }
+    if (pid1 == 0) {
+        printf("Child 1: PID = %d, Parent PID = %d\n", getpid(), getppid());
+        for (int i = 1; i <= 3; i++) {
+            printf("Child 1: iteration %d\n", i);
+            sleep(1);                              /* CPU switches to another process */
+        }
+        exit(10);                                  /* exit status */
+    }
+
+    pid2 = fork();                                 /* second child */
+    if (pid2 < 0) { perror("fork"); exit(1); }
+    if (pid2 == 0) {
+        printf("Child 2: PID = %d, replacing image with 'ls -l'\n", getpid());
+        execlp("ls", "ls", "-l", (char *)NULL);
+        perror("execlp");                          /* only runs if exec fails */
+        exit(1);
+    }
+
+    /* parent waits once for every child */
+    for (int i = 0; i < 2; i++) {
+        pid_t done = wait(&status);
+        if (WIFEXITED(status))
+            printf("Parent: child PID %d terminated, exit status = %d\n",
+                   done, WEXITSTATUS(status));
+    }
+    return 0;
+}
+
+SAMPLE INPUT
+----------------------------------------
+(no input needed)
+
+SAMPLE OUTPUT
+----------------------------------------
+Parent process PID = 161
+Child 1: PID = 162, Parent PID = 161
+Child 1: iteration 1
+Child 2: PID = 163, replacing image with 'ls -l'
+total 0
+drwxr-xr-x 1 claude ubuntu 0 Oct 28 01:15 Ex1
+drwxr-xr-x 1 claude ubuntu 0 Oct 28 01:16 Ex10
+drwxr-xr-x 1 claude ubuntu 0 Oct 28 01:15 Ex2
+drwxr-xr-x 1 claude ubuntu 0 Oct 28 01:16 Ex3
+drwxr-xr-x 1 claude ubuntu 0 Oct 28 01:15 Ex4
+drwxr-xr-x 1 claude ubuntu 0 Oct 28 01:15 Ex5
+drwxr-xr-x 1 claude ubuntu 0 Oct 28 01:15 Ex6
+drwxr-xr-x 1 claude ubuntu 0 Oct 28 01:16 Ex7
+drwxr-xr-x 1 claude ubuntu 0 Oct 28 01:16 Ex8
+drwxr-xr-x 1 claude ubuntu 0 Oct 28 01:16 Ex9
+Parent: child PID 163 terminated, exit status = 0
+Child 1: iteration 2
+Child 1: iteration 3
+Parent: child PID 162 terminated, exit status = 10
